@@ -590,6 +590,7 @@
 
 import hashlib
 import sqlite3
+import os
 from contextlib import closing
 from datetime import datetime
 from io import BytesIO
@@ -597,9 +598,24 @@ from typing import List, Tuple
 
 import pandas as pd
 import streamlit as st
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+
+# Helper function to get config values from either Streamlit secrets or environment variables
+def get_config(key: str, default: str = "") -> str:
+    # Try Streamlit secrets first (for cloud deployment)
+    try:
+        return st.secrets[key]
+    except (KeyError, AttributeError):
+        # Fall back to environment variables (for local development)
+        return os.getenv(key, default)
+
 
 DB_PATH = "lecture_portal.db"
-COLLEGE_NAME = "XYZ"
+COLLEGE_NAME = get_config("COLLEGE_NAME", "XYZ")
 
 # -------------------------------
 # Fixed day/slot structure
@@ -724,14 +740,40 @@ def init_db():
 
         # Seed demo departments/HODs if empty
         cur.execute("SELECT COUNT(*) FROM departments")
-        if cur.fetchone()[0] == 0:
+        count = cur.fetchone()[0]
+
+        if count == 0:
             demo = [
-                ("CSE", "cse_hod", "1234"),
-                ("CIVIL", "civil_hod", "1234"),
-                ("AI/ML", "aiml_hod", "1234"),
-                ("AI/DS", "aids_hod", "1234"),
-                ("EC", "ec_hod", "1234"),
-                ("EE", "ee_hod", "1234"),
+                (
+                    "CSE",
+                    get_config("CSE_HOD_USERNAME", "cse_hod"),
+                    get_config("CSE_HOD_PASSWORD", "1234"),
+                ),
+                (
+                    "CIVIL",
+                    get_config("CIVIL_HOD_USERNAME", "civil_hod"),
+                    get_config("CIVIL_HOD_PASSWORD", "1234"),
+                ),
+                (
+                    "AI/ML",
+                    get_config("AIML_HOD_USERNAME", "aiml_hod"),
+                    get_config("AIML_HOD_PASSWORD", "1234"),
+                ),
+                (
+                    "AI/DS",
+                    get_config("AIDS_HOD_USERNAME", "aids_hod"),
+                    get_config("AIDS_HOD_PASSWORD", "1234"),
+                ),
+                (
+                    "EC",
+                    get_config("EC_HOD_USERNAME", "ec_hod"),
+                    get_config("EC_HOD_PASSWORD", "1234"),
+                ),
+                (
+                    "EE",
+                    get_config("EE_HOD_USERNAME", "ee_hod"),
+                    get_config("EE_HOD_PASSWORD", "1234"),
+                ),
             ]
             for name, user, pwd in demo:
                 cur.execute(
